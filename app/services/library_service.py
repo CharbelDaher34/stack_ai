@@ -3,7 +3,7 @@ from typing import List, Optional
 from datetime import datetime
 from sqlmodel import Session
 from infrastructure.repositories.library_repository import LibraryRepository
-from app.core.models.models import Library, LibraryCreate, LibraryRead # Assuming LibraryUpdate will be similar to LibraryCreate
+from core.models import Library, LibraryCreate, LibraryRead # Assuming LibraryUpdate will be similar to LibraryCreate
 from core.db import get_session # To be used with FastAPI Depends
 
 class LibraryService:

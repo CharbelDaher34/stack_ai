@@ -1,7 +1,7 @@
 import uuid
 from typing import List, Optional
 from sqlmodel import Session, select
-from app.core.models.models import Document
+from core.models import Document
 
 
 class DocumentRepository:

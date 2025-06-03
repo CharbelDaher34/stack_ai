@@ -25,3 +25,7 @@ async def health_check():
 #
 # app.include_router(documents_router.router, prefix="/api/v1/documents", tags=["Documents"])
 # app.include_router(chunks_router.router, prefix="/api/v1/chunks", tags=["Chunks"]) 
+
+if __name__ == "__main__":
+    import uvicorn
+    uvicorn.run(app, host="0.0.0.0", port=8018)

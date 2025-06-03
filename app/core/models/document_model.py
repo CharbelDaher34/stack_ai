@@ -1,8 +1,8 @@
-from sqlmodel import Field, SQLModel
+from .time_base import TimeBase
+from sqlmodel import Field, SQLModel, Relationship
 import uuid
-from core.models.time_base import TimeBase
-from sqlalchemy.orm import relationship
 from typing import List
+from utils.pydantic_utils import make_optional
 
 class DocumentBase(TimeBase):
     name: str
@@ -11,5 +11,16 @@ class DocumentBase(TimeBase):
 class Document(DocumentBase, table=True):
     id: uuid.UUID = Field(default_factory=uuid.uuid4, primary_key=True)
     
-    library=relationship("Library", back_populates="documents")
-    chunks: List["Chunk"] = relationship("Chunk", back_populates="document")
+    # Use Relationship instead of relationship and string annotations
+    library: "Library" = Relationship(back_populates="documents")
+    chunks: List["Chunk"] = Relationship(back_populates="document")
+
+class DocumentCreate(DocumentBase):
+    pass
+
+class DocumentRead(DocumentBase):
+    id: uuid.UUID
+
+@make_optional
+class DocumentUpdate(DocumentBase):
+    pass

@@ -1,8 +1,8 @@
-from sqlmodel import create_engine, Session
+from sqlmodel import create_engine, Session, SQLModel
 
 DATABASE_URL = "sqlite:///./test.db" # In-memory SQLite for now, can be changed later
 
-engine = create_engine(DATABASE_URL, echo=True) # echo=True for logging SQL queries
+engine = create_engine(DATABASE_URL, echo=False) # echo=True for logging SQL queries
 
 def get_session():
     with Session(engine) as session:
@@ -12,9 +12,8 @@ def get_session():
 
 # Function to create DB and tables (call this from main.py on startup)
 def create_db_and_tables():
-    from app.core.models.models import SQLModel # Import base SQLModel
     # Import all your models here so they are registered with SQLModel's metadata
-    from app.core.models.models import Library, Document, Chunk 
+    from core.models import Library, Document, Chunk 
     
     # This will create tables for all models that inherit from SQLModel
     # and have table=True

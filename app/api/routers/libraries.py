@@ -5,7 +5,7 @@ from fastapi import APIRouter, Depends, HTTPException, status
 from sqlmodel import Session
 
 from core.db import get_session
-from app.core.models.models import Library, LibraryCreate, LibraryRead
+from core.models import Library, LibraryCreate, LibraryRead
 from services.library_service import LibraryService
 
 router = APIRouter()

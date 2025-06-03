@@ -1,7 +1,7 @@
 import uuid
 from typing import List, Optional
 from sqlmodel import Session, select
-from app.core.models.models import Chunk
+from core.models import Chunk
 
 
 class ChunkRepository:

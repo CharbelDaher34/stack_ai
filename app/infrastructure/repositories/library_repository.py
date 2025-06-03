@@ -2,7 +2,7 @@ from typing import List, Optional
 import uuid
 from datetime import datetime
 from sqlmodel import Session, select
-from app.core.models.models import Library, LibraryCreate, LibraryRead # Assuming LibraryUpdate will be similar to LibraryCreate for now
+from core.models import Library, LibraryCreate, LibraryRead # Assuming LibraryUpdate will be similar to LibraryCreate for now
 from core.db import get_session # We'll need a way to get a DB session
 
 class LibraryRepository:
