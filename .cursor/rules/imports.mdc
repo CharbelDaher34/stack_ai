@@ -1,0 +1,7 @@
+---
+description: importing function from other files
+globs: 
+alwaysApply: false
+---
+the main app is in inside app folder
+so do not add app. while importing variables

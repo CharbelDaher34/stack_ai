@@ -1,0 +1,6 @@
+---
+description: 
+globs: 
+alwaysApply: true
+---
+check [objective.md](mdc:objective.md) and make sure all the operations are inline with the project objective
