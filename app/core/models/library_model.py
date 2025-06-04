@@ -13,7 +13,6 @@ class LibraryBase(TimeBase):
 
 class Library(LibraryBase, table=True):
     id: uuid.UUID = Field(default_factory=uuid.uuid4, primary_key=True)
-    indexed_at: Optional[datetime] = None
     
     # Use Relationship instead of relationship and string annotation
     documents: List["Document"] = Relationship(back_populates="library")

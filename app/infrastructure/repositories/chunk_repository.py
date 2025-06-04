@@ -17,13 +17,19 @@ class ChunkRepository:
     def get(self, chunk_id: uuid.UUID) -> Optional[Chunk]:
         return self.session.get(Chunk, chunk_id)
     
-    def get_by_document_id(self, document_id: uuid.UUID, skip: int = 0, limit: int = 100) -> List[Chunk]:
-        statement = select(Chunk).where(Chunk.document_id == document_id).offset(skip).limit(limit)
+    def get_by_document_id(self, document_id: uuid.UUID, skip: int = 0, limit: int = 100, for_indexing: bool = False) -> List[Chunk]:
+        if for_indexing:
+            statement = select(Chunk.id, Chunk.embedding).where(Chunk.document_id == document_id).offset(skip).limit(limit)
+        else:
+            statement = select(Chunk).where(Chunk.document_id == document_id).offset(skip).limit(limit)
         results = self.session.exec(statement)
         return results.all()
     
-    def get_all(self, skip: int = 0, limit: int = 100) -> List[Chunk]:
-        statement = select(Chunk).offset(skip).limit(limit)
+    def get_all(self, skip: int = 0, limit: int = 100, for_indexing: bool = False) -> List[Chunk]:
+        if for_indexing:
+            statement = select(Chunk.id, Chunk.embedding).offset(skip).limit(limit)
+        else:
+            statement = select(Chunk).offset(skip).limit(limit)
         results = self.session.exec(statement)
         return results.all()
     

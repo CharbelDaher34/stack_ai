@@ -1,3 +1,4 @@
+from .document_model import Document
 from sqlmodel import Field, SQLModel, Relationship
 import uuid
 from .time_base import TimeBase

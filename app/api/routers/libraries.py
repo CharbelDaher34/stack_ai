@@ -1,5 +1,5 @@
 import uuid
-from typing import List
+from typing import List, Dict, Any
 
 from fastapi import APIRouter, Depends, HTTPException, status
 from sqlmodel import Session
@@ -8,7 +8,11 @@ from core.db import get_session
 from core.models import Library, LibraryCreate, LibraryRead
 from services.library_service import LibraryService
 
-router = APIRouter()
+router = APIRouter(
+    prefix="/libraries",
+    tags=["libraries"],
+    responses={404: {"description": "Not found"}},
+)
 
 # Dependency to get LibraryService
 def get_library_service(session: Session = Depends(get_session)) -> LibraryService:
@@ -71,10 +75,9 @@ def delete_library(
     service: LibraryService = Depends(get_library_service)
 ):
     """
-    Delete a specific library.
+    Delete a specific library and its associated documents and chunks.
     """
     deleted_library = service.delete_library(library_id)
     if deleted_library is None:
-        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Library not found")
-    # No content to return on successful deletion (HTTP 204)
-    return
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Library not found or could not be deleted")
+    return # HTTP 204 No Content

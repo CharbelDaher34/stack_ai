@@ -1,6 +1,6 @@
 from fastapi import FastAPI
 from core.db import create_db_and_tables
-from api.routers import libraries as libraries_router
+from api.routers import libraries_router, documents_router, chunks_router
 
 app = FastAPI(
     title="VectorDB API",
@@ -13,7 +13,9 @@ def on_startup():
     create_db_and_tables()
 
 # Include routers
-app.include_router(libraries_router.router, prefix="/api/v1/libraries", tags=["Libraries"])
+app.include_router(libraries_router)
+app.include_router(documents_router)
+app.include_router(chunks_router)
 
 @app.get("/health", tags=["Health"])
 async def health_check():

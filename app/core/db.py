@@ -1,8 +1,23 @@
-from sqlmodel import create_engine, Session, SQLModel
 
-DATABASE_URL = "sqlite:///./test.db" # In-memory SQLite for now, can be changed later
+from sqlmodel import SQLModel, create_engine, Session
+from sqlalchemy import event
+from sqlalchemy.engine import Engine
 
-engine = create_engine(DATABASE_URL, echo=False) # echo=True for logging SQL queries
+DATABASE_URL = "sqlite:///./test.db"
+
+# Create the engine without the 'foreign_keys' option
+engine = create_engine(
+    DATABASE_URL,
+    echo=False,
+    connect_args={"check_same_thread": False}
+)
+
+# Enable foreign key constraints for SQLite
+@event.listens_for(engine, "connect")
+def enable_foreign_keys(dbapi_connection, connection_record):
+    cursor = dbapi_connection.cursor()
+    cursor.execute("PRAGMA foreign_keys=ON")
+    cursor.close()
 
 def get_session():
     with Session(engine) as session:

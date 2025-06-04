@@ -4,7 +4,7 @@ from datetime import datetime
 from sqlmodel import Session
 from infrastructure.repositories.document_repository import DocumentRepository
 from infrastructure.repositories.chunk_repository import ChunkRepository
-from app.core.models.models import Document, DocumentCreate, DocumentRead, DocumentUpdate
+from core.models import Document, DocumentCreate, DocumentUpdate
 
 
 class DocumentService:
