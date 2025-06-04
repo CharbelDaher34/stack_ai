@@ -5,6 +5,7 @@ class LinearIndex:
     def __init__(self,vectors: List[List[float]], ids: List[str]):
         self.vectors: List[np.ndarray] = [np.array(vector) for vector in vectors]
         self.ids: List[str] = ids
+        print(f"LinearIndex initialized with {len(self.vectors)} vectors and {len(self.ids)} ids")
     
     def add_vector(self, vector: List[float], chunk_id: str) -> None:
         """Adds a vector and its ID to a temporary storage."""
@@ -21,19 +22,33 @@ class LinearIndex:
 
     def search(self, query: List[float], k: int) -> List[Tuple[str, float]]:
         """Performs k-NN search. Assumes query vector matches dimension of indexed vectors."""
-        if not self.vectors or not query:
+  
+        # Check if we have vectors to search against
+        if not self.vectors:
+            print(f"No vectors indexed")
             return []
         
-        query_vec = np.array(query)
+        # Convert query to numpy array and validate
+        try:
+            query_vec = np.array(query)
+            if query_vec.size == 0:
+                print(f"Empty query vector")
+                return []
+        except (ValueError, TypeError) as e:
+            print(f"Invalid query format: {e}")
+            return []
         
-        # Ensure query_vec dimension matches indexed vectors dimension if vectors exist
-        if self.vectors and len(query_vec) != len(self.vectors[0]):
-            # logger.error("Query vector dimension mismatch with indexed vectors.")
-            # Or raise ValueError
+        print(f"Query vector: {query_vec}")
+        print(f"Vectors: {len(self.vectors)}")
+        print(f"Ids: {len(self.ids)}")
+        
+        # Ensure query_vec dimension matches indexed vectors dimension
+        if len(query_vec) != len(self.vectors[0]):
+            print(f"Query vector dimension mismatch with indexed vectors. Query: {len(query_vec)}, Indexed: {len(self.vectors[0])}")
             return [] 
             
         distances = [np.linalg.norm(vec - query_vec) for vec in self.vectors]
-        
+        print(f"Distances: {distances}")
         if not distances:
             return []
             

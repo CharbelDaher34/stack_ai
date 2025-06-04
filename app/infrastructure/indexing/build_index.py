@@ -1,6 +1,6 @@
 import uuid
 import logging
-from typing import List, Optional, Dict, Any, Union
+from typing import List, Optional, Dict, Any, Union, Tuple
 from sqlmodel import Session
 
 from services.chunk_service import ChunkService
@@ -9,8 +9,8 @@ from services.library_service import LibraryService
 from .linear_index import LinearIndex
 from .kd_tree import KDTreeIndex
 # Import Chunk model for type hinting in _get_chunks if necessary
-from app.core.models import Chunk 
-
+from core.models import Chunk 
+from sentence_transformers import SentenceTransformer
 
 logger = logging.getLogger(__name__)
 
@@ -26,7 +26,8 @@ class IndexBuilder:
         self.chunk_service = ChunkService(session)
         self.document_service = DocumentService(session)
         self.library_service = LibraryService(session)
-    
+        self.model = SentenceTransformer("all-MiniLM-L6-v2")
+        self.index: Union[LinearIndex, KDTreeIndex] = None
     def build_index(
         self,
         index_type: str,
@@ -36,61 +37,42 @@ class IndexBuilder:
         """Builds a single index of the specified type."""
         logger.info(f"Building {index_type} index for library_id={library_id}, document_id={document_id}")
 
-        if index_type == "linear":
-            index: LinearIndex = LinearIndex(vectors=[], ids=[]) 
-        elif index_type == "kd_tree":
-            index: KDTreeIndex = KDTreeIndex(vectors=[], ids=[]) 
-        else:
-            logger.error(f"Unsupported index type: {index_type}")
-            raise ValueError(f"Unsupported index type: {index_type}")
-
+      
         all_retrieved_chunks = self._get_chunks(library_id, document_id)
 
         if not all_retrieved_chunks:
             logger.warning(f"No chunks found to build {index_type} index for scope: library_id={library_id}, document_id={document_id}. Building empty index.")
-            index.build() # Build an empty index
-            return index
-
-        expected_dim: Optional[int] = None
-        for chunk_data in all_retrieved_chunks:
-            if chunk_data.embedding and isinstance(chunk_data.embedding, list) and len(chunk_data.embedding) > 0:
-                expected_dim = len(chunk_data.embedding)
-                break
-        
-        if expected_dim is None:
-            logger.warning(f"No valid embeddings with determinable dimension found for {index_type} index. Scope: library_id={library_id}, document_id={document_id}. Building empty index.")
-            index.build()
-            return index
+            return self.index
+        else:
+            if index_type == "linear":
+                self.index: LinearIndex = LinearIndex(vectors=[], ids=[]) 
+            elif index_type == "kd_tree":
+                self.index: KDTreeIndex = KDTreeIndex(vectors=[], ids=[]) 
+            else:
+                logger.error(f"Unsupported index type: {index_type}")
+                raise ValueError(f"Unsupported index type: {index_type}")
 
         added_count = 0
         for chunk_data in all_retrieved_chunks:
             if chunk_data.embedding and isinstance(chunk_data.embedding, list) and len(chunk_data.embedding) > 0:
-                if len(chunk_data.embedding) == expected_dim:
-                    index.add_vector(chunk_data.embedding, str(chunk_data.id))
-                    added_count += 1
-                else:
-                    logger.warning(
-                        f"Skipping chunk {chunk_data.id} for {index_type} index due to dimension mismatch. "
-                        f"Expected {expected_dim}, got {len(chunk_data.embedding)}. Scope: library_id={library_id}, document_id={document_id}"
-                    )
+                self.index.add_vector(chunk_data.embedding, str(chunk_data.id))
+                added_count += 1
+               
             else:
                 logger.warning(f"Skipping chunk {chunk_data.id} for {index_type} index due to empty or invalid embedding. Scope: library_id={library_id}, document_id={document_id}")
         
         if added_count == 0:
             logger.warning(f"No valid vectors were added to {index_type} index after filtering. Scope: library_id={library_id}, document_id={document_id}. Building empty index.")
-            index.build() 
-            return index
-
-        try:
-            index.build()
-            logger.info(f"Successfully built {index_type} index with {added_count} vectors. Scope: library_id={library_id}, document_id={document_id}")
-        except Exception as e:
-            logger.error(f"Error building {index_type} index structure: {e}. Scope: library_id={library_id}, document_id={document_id}", exc_info=True)
-            raise
-
-        return index
+            return self.index
+        print(f"Added {added_count} vectors to {index_type} index")
+        print(f"Vectors: {len(self.index.vectors)}")
+        print(f"Ids: {len(self.index.ids)}")
+        return self.index
   
-    
+    def search_index(self, query: str, k: int) -> List[Tuple[str, float]]:
+        """Searches the index for the nearest neighbors to the query vector."""
+        query_embedding = self.model.encode(query)
+        return self.index.search(query_embedding, k)
    
     
     def _get_chunks(

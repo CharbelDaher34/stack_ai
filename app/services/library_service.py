@@ -105,6 +105,4 @@ class LibraryService:
             "chunk_count": total_chunks,
             "created_at": library.created_at,
             "updated_at": library.updated_at,
-            "indexed_at": library.indexed_at,
-            "is_indexed": library.indexed_at is not None
         } 

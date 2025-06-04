@@ -2,22 +2,24 @@
 from sqlmodel import SQLModel, create_engine, Session
 from sqlalchemy import event
 from sqlalchemy.engine import Engine
+import os
+import dotenv
 
-DATABASE_URL = "sqlite:///./test.db"
+dotenv.load_dotenv()
 
+DATABASE_URL = f"postgresql://{os.getenv('POSTGRES_USER')}:{os.getenv('POSTGRES_PASSWORD')}@{os.getenv('POSTGRES_SERVER')}:{os.getenv('POSTGRES_PORT')}/{os.getenv('POSTGRES_DB')}"
 # Create the engine without the 'foreign_keys' option
 engine = create_engine(
     DATABASE_URL,
     echo=False,
-    connect_args={"check_same_thread": False}
 )
 
-# Enable foreign key constraints for SQLite
-@event.listens_for(engine, "connect")
-def enable_foreign_keys(dbapi_connection, connection_record):
-    cursor = dbapi_connection.cursor()
-    cursor.execute("PRAGMA foreign_keys=ON")
-    cursor.close()
+# # Enable foreign key constraints for SQLite
+# @event.listens_for(engine, "connect")
+# def enable_foreign_keys(dbapi_connection, connection_record):
+#     cursor = dbapi_connection.cursor()
+#     cursor.execute("PRAGMA foreign_keys=ON")
+#     cursor.close()
 
 def get_session():
     with Session(engine) as session:
