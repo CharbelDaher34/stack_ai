@@ -5,6 +5,7 @@ class LinearIndex:
     def __init__(self,vectors: List[List[float]], ids: List[str]):
         self.vectors: List[np.ndarray] = [np.array(vector) for vector in vectors]
         self.ids: List[str] = ids
+        
         print(f"LinearIndex initialized with {len(self.vectors)} vectors and {len(self.ids)} ids")
     
     def add_vector(self, vector: List[float], chunk_id: str) -> None:
@@ -38,9 +39,9 @@ class LinearIndex:
             print(f"Invalid query format: {e}")
             return []
         
-        print(f"Query vector: {query_vec}")
-        print(f"Vectors: {len(self.vectors)}")
-        print(f"Ids: {len(self.ids)}")
+        # print(f"Query vector: {query_vec}")
+        # print(f"Vectors: {len(self.vectors)}")
+        # print(f"Ids: {len(self.ids)}")
         
         # Ensure query_vec dimension matches indexed vectors dimension
         if len(query_vec) != len(self.vectors[0]):
@@ -48,10 +49,10 @@ class LinearIndex:
             return [] 
             
         distances = [np.linalg.norm(vec - query_vec) for vec in self.vectors]
-        print(f"Distances: {distances}")
+        # print(f"Distances: {distances}")
         if not distances:
             return []
-            
+
         # Get indices of k smallest distances
         # Using np.argsort and then selecting top k
         # If k is larger than number of items, return all items sorted
