@@ -15,9 +15,9 @@ router = APIRouter(
     responses={404: {"description": "Not found"}},
 )
 
-
-index_manager = IndexBuilder(next(get_session()),["linear","ball_tree"])
-
+print("Indexing...")
+index_manager = IndexBuilder(next(get_session()),["ball_tree","linear"])
+print("Indexing done")
 
 def get_chunk_service(session: Session = Depends(get_session)) -> ChunkService:
     return ChunkService(session)
@@ -131,7 +131,7 @@ class SearchResponse(BaseModel):
 def search_chunks(
     query: str,
     k: int = 10,
-    index_types: List[str] = Query(default=["linear", "ball_tree"]),
+    index_types: List[str] = Query(default=["ball_tree", "linear"]),
 ):
     """
     Search for chunks using different index types.

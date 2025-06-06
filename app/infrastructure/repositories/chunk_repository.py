@@ -1,6 +1,6 @@
 import uuid
 from typing import List, Optional
-from sqlmodel import Session, select
+from sqlmodel import Session, select, func
 from core.models import Chunk
 
 
@@ -55,3 +55,8 @@ class ChunkRepository:
             self.session.delete(chunk)
         self.session.commit()
         return count
+    
+    def get_random_document_id(self) -> uuid.UUID:
+        chunks=self.get_all(limit=1)
+       
+        return chunks[0].document_id

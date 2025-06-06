@@ -1,19 +1,20 @@
+import uuid
 import numpy as np
 from typing import List, Tuple
 
 class LinearIndex:
-    def __init__(self,vectors: List[List[float]], ids: List[str]):
+    def __init__(self,vectors: List[List[float]], ids: List[uuid.UUID]):
         self.vectors: List[np.ndarray] = [np.array(vector) for vector in vectors]
-        self.ids: List[str] = ids
+        self.ids: List[uuid.UUID] = ids
         
         print(f"LinearIndex initialized with {len(self.vectors)} vectors and {len(self.ids)} ids")
     
-    def add_vector(self, vector: List[float], chunk_id: str) -> None:
+    def add_vector(self, vector: List[float], chunk_id: uuid.UUID) -> None:
         """Adds a vector and its ID to a temporary storage."""
         if not isinstance(vector, list) or not vector:
             # logger.warning(f"Invalid vector provided for chunk_id {chunk_id}. Skipping.")
             return
-        if not isinstance(chunk_id, str):
+        if not isinstance(chunk_id, uuid.UUID):
             # logger.warning(f"Invalid chunk_id type for vector {vector}. Skipping.")
             return
         
@@ -21,7 +22,7 @@ class LinearIndex:
         self.ids.append(chunk_id)
     
 
-    def search(self, query: List[float], k: int) -> List[Tuple[str, float]]:
+    def search(self, query: List[float], k: int) -> List[Tuple[uuid.UUID, float]]:
         """Performs k-NN search. Assumes query vector matches dimension of indexed vectors."""
   
         # Check if we have vectors to search against

@@ -1,9 +1,10 @@
+import uuid
 import numpy as np
 from typing import List, Optional, Tuple
 import heapq
 
 class BallTreeNode:
-    def __init__(self, points: List[np.ndarray], ids: List[str]):
+    def __init__(self, points: List[np.ndarray], ids: List[uuid.UUID]):
         self.points = points
         self.ids = ids
         self.left: Optional[BallTreeNode] = None
@@ -15,14 +16,14 @@ class BallTreeNode:
         return self.left is None and self.right is None
 
 class BallTree:
-    def __init__(self, vectors: List[List[float]], ids: List[str], leaf_size: int = 20):
+    def __init__(self, vectors: List[List[float]], ids: List[uuid.UUID], leaf_size: int = 20):
         self.leaf_size = leaf_size
         self.vectors: List[np.ndarray] = [np.array(vector) for vector in vectors]
-        self.ids: List[str] = ids
+        self.ids: List[uuid.UUID] = ids
         print(f"BallTree initialized with {len(self.vectors)} vectors and {len(self.ids)} ids")
         self.root = self._build(self.vectors, self.ids)
 
-    def _build(self, points: List[np.ndarray], ids: List[str]) -> Optional[BallTreeNode]:
+    def _build(self, points: List[np.ndarray], ids: List[uuid.UUID]) -> Optional[BallTreeNode]:
         if not points:
             return None
 
@@ -75,26 +76,32 @@ class BallTree:
         node.left = BallTreeNode(left_points, left_ids)
         node.right = BallTreeNode(right_points, right_ids)
 
-    def add_vector(self, vector: List[float], chunk_id: str):
+    def add_vector(self, vector: List[float], chunk_id: uuid.UUID):
         """Adds a vector and its ID to the index without rebuilding."""
-        if not isinstance(vector, list) or not vector or not isinstance(chunk_id, str):
+        if not isinstance(vector, list) or not vector or not isinstance(chunk_id, uuid.UUID):
             return
 
         point = np.array(vector)
+        
+        # Always add to main storage first (for tracking and validation)
         self.vectors.append(point)
         self.ids.append(chunk_id)
         
         if self.root is None:
+            # If tree is empty, build the root
             self.root = self._build([point], [chunk_id])
         else:
+            # If tree exists, insert into tree structure
             self._insert(self.root, point, chunk_id)
 
-    def _insert(self, node: BallTreeNode, point: np.ndarray, id: str):
+    def _insert(self, node: BallTreeNode, point: np.ndarray, id: uuid.UUID):
         """Recursively finds the best leaf to insert the point."""
+        
         # If it's a leaf, add the point
         if node.is_leaf():
             node.points.append(point)
             node.ids.append(id)
+            
             # If the leaf is now too big, split it
             if len(node.points) > self.leaf_size:
                 self._split_node(node)
@@ -112,24 +119,26 @@ class BallTree:
         
         # Update centroid and radius on the way back up
         self._update_node_bounds(node)
-
+     
     def _update_node_bounds(self, node: BallTreeNode):
         """Updates the centroid and radius of a node based on its children."""
-        if not node.is_leaf():
-            all_points = (node.left.points if node.left.is_leaf() else []) + \
-                         (node.right.points if node.right.is_leaf() else [])
-            # A more robust update would be to average child centroids weighted by size
-            # but for simplicity, we recalculate from the children's points for accuracy.
-            # In a highly optimized tree, we'd avoid this by just expanding the radius.
-            all_child_centroids = [node.left.centroid, node.right.centroid]
-            node.centroid = np.mean(all_child_centroids, axis=0)
+        if node.is_leaf():
+            # For leaf nodes, recalculate centroid and radius from points
+            if len(node.points) > 0:
+                node.centroid = np.mean(node.points, axis=0)
+                node.radius = max(np.linalg.norm(p - node.centroid) for p in node.points)
+        else:
+            # For internal nodes, update based on child centroids and radii
+            if node.left and node.right:
+                # Update centroid as the average of child centroids
+                node.centroid = (node.left.centroid + node.right.centroid) / 2
+                
+                # Radius must enclose both child balls
+                rad_left = np.linalg.norm(node.left.centroid - node.centroid) + node.left.radius
+                rad_right = np.linalg.norm(node.right.centroid - node.centroid) + node.right.radius
+                node.radius = max(rad_left, rad_right)
 
-            # Radius must enclose both child balls
-            rad_left = np.linalg.norm(node.left.centroid - node.centroid) + node.left.radius
-            rad_right = np.linalg.norm(node.right.centroid - node.centroid) + node.right.radius
-            node.radius = max(rad_left, rad_right)
-
-    def _search_k(self, node: BallTreeNode, query: np.ndarray, k: int, heap: List[Tuple[float, str]]):
+    def _search_k(self, node: BallTreeNode, query: np.ndarray, k: int, heap: List[Tuple[float, uuid.UUID]]):
         """Recursive k-NN search using a heap for pruning."""
         if node is None:
             return
@@ -147,10 +156,10 @@ class BallTree:
             for i, p in enumerate(node.points):
                 d = np.linalg.norm(query - p)
                 if len(heap) < k:
-                    heapq.heappush(heap, (-d, node.ids[i]))
+                    heapq.heappush(heap, (-d, str(node.ids[i])))
                 else:
                     # heappushpop is more efficient than a separate push and pop
-                    heapq.heappushpop(heap, (-d, node.ids[i]))
+                    heapq.heappushpop(heap, (-d, str(node.ids[i])))
             return
 
         # It's an internal node, decide which child to visit first
@@ -165,7 +174,7 @@ class BallTree:
             self._search_k(node.right, query, k, heap)
             self._search_k(node.left, query, k, heap)
 
-    def search(self, query: List[float], k: int) -> List[Tuple[str, float]]:
+    def search(self, query: List[float], k: int) -> List[Tuple[uuid.UUID, float]]:
         """Performs k-NN search using the Ball Tree for pruning."""
         if not self.vectors or self.root is None:
             print("No vectors indexed")
@@ -182,7 +191,7 @@ class BallTree:
 
         # Use a max-heap to find the k nearest neighbors
         # We store (-distance, id) to simulate a max-heap with a min-heap.
-        results_heap: List[Tuple[float, str]] = []
+        results_heap: List[Tuple[float, uuid.UUID]] = []
         self._search_k(self.root, query_vec, k, results_heap)
 
         # Dequeue, sort, and format the results
@@ -195,7 +204,7 @@ class BallTree:
 if __name__ == "__main__":
     # Generate sample 2D points
     data = [[np.random.rand(), np.random.rand()] for _ in range(100)]
-    ids = [f"point_{i}" for i in range(100)]
+    ids = [uuid.uuid4() for _ in range(100)]
 
     # Build the tree
     tree = BallTree(data, ids)

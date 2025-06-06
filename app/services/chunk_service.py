@@ -15,12 +15,17 @@ class ChunkService:
         self.chunk_repository = ChunkRepository(session)
         self.model = SentenceTransformer("all-MiniLM-L6-v2")
         # self.cohere_client = Client(api_key=os.getenv("COHERE_API_KEY"))
-    def create_chunk(self, chunk_create: ChunkCreateRequest) -> Chunk:
+    def create_chunk(self, chunk_create: ChunkCreateRequest,random_chunk:bool=False) -> Chunk:
         """Create a new chunk with business logic validation."""
         # Business logic: validate that document exists could go here
         # Validate embedding dimension consistency could go here
         embedding = self.model.encode(chunk_create.text)
-        chunk_create=ChunkCreate(text=chunk_create.text,document_id=chunk_create.document_id,embedding=embedding.tolist())
+        if not random_chunk:
+            chunk_create=ChunkCreate(text=chunk_create.text,document_id=chunk_create.document_id,embedding=embedding.tolist())
+        else:
+            #get random document id
+            document_id=self.chunk_repository.get_random_document_id()
+            chunk_create=ChunkCreate(text=chunk_create.text,document_id=document_id,embedding=embedding.tolist())
         db_chunk = Chunk.model_validate(chunk_create)
         return self.chunk_repository.create(db_chunk)
 
@@ -60,4 +65,5 @@ class ChunkService:
         """Delete all chunks in a document."""
         return self.chunk_repository.delete_by_document_id(document_id)
     
-    
+    def get_random_document_id(self) -> uuid.UUID:
+        return self.chunk_repository.get_random_document_id()
