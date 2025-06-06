@@ -42,6 +42,23 @@ def create_chunk(
     except ValueError as e:
         raise HTTPException(status_code=400, detail=str(e))
 
+@router.post("/random", response_model=str)
+def create_random_chunk(
+    text: str,
+    chunk_service: ChunkService = Depends(get_chunk_service),
+):
+    """
+    Create a new chunk.
+    """
+    try:
+ 
+        index_manager.add_vector_by_text(text,random_chunk=True)
+        print(f"Vector added to index: {text}")
+        return "Added"
+    except ValueError as e:
+        raise HTTPException(status_code=400, detail=str(e))
+
+
 @router.get("/{chunk_id}", response_model=ChunkRead)
 def read_chunk(
     chunk_id: uuid.UUID,
