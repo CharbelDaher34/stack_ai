@@ -3,25 +3,22 @@ from infrastructure.indexing.build_index import IndexBuilder
 from services.chunk_service import ChunkService
 from services.document_service import DocumentService
 from services.library_service import LibraryService
-from core.db import get_session
+from core.db import get_session, create_db_and_tables
 from scripts.populate_db import create_sample_data
 from core.models import Chunk
+print("Starting test_index_builder")
 def test_index_builder():
     session = next(get_session())
-    index_builder = IndexBuilder(session)
-    index_builder.build_index(index_type="linear")
-    result = index_builder.search_index("transformers", 1)
-    print(result)
-  
-    print("--------------------------------\n\n")
-  
-    index_builder.build_index(index_type="ball_tree")
-    result = index_builder.search_index("transformers", 1)
-    print(result)
+    index_types=["linear","ball_tree"]
+    index_builder = IndexBuilder(session,index_types)
     
-create_sample_data(num_libraries=10, docs_per_library=10, chunks_per_doc=40)
+    for index_type in index_types:
+        result=index_builder.search_index("transformers", 1,index_type)
+        print([chunk.text+"\n" for chunk in result])
+    
+create_db_and_tables(delete_tables=True)
+create_sample_data(num_libraries=2, docs_per_library=2, chunks_per_doc=2)
 
 
 test_index_builder()
-
 

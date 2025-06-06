@@ -5,7 +5,7 @@ from .time_base import TimeBase
 from typing import List
 from sqlalchemy import JSON
 from sqlalchemy import Column
-from utils.pydantic_utils import make_optional
+from utils.pydantic_utils import make_optional_fields,make_optional
 
 class ChunkBase(TimeBase):
     text: str
@@ -21,9 +21,14 @@ class Chunk(ChunkBase, table=True):
 class ChunkCreate(ChunkBase):
     pass
 
+class ChunkCreateRequest(SQLModel):
+    text: str
+    document_id: uuid.UUID
+
 class ChunkRead(ChunkBase):
     id: uuid.UUID
-
+    
+    
 @make_optional
 class ChunkUpdate(ChunkBase):
-    pass
+    id: uuid.UUID

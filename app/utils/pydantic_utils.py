@@ -1,4 +1,4 @@
-from typing import Optional, get_type_hints, ClassVar, get_origin, List
+from typing import Optional, get_type_hints, ClassVar, get_origin, List, Any
 from pydantic import BaseModel, create_model
 
 def make_optional(model_cls: type[BaseModel]) -> type[BaseModel]:
@@ -19,13 +19,28 @@ def make_optional(model_cls: type[BaseModel]) -> type[BaseModel]:
     )
     return new_model
 
+def make_optional_fields(fields_to_include: List[str]):
+    """
+    Decorator to create a new Pydantic model with specified fields set as optional.
+    Class variables (annotated with ClassVar) are excluded.
+    """
+    def decorator(model_cls: type[BaseModel]) -> type[BaseModel]:
+        annotations = get_type_hints(model_cls, include_extras=True)
+        optional_fields = {}
+        for field_name, field_type in annotations.items():
+            if get_origin(field_type) is ClassVar:
+                continue  # Skip ClassVar fields
+            if field_name in fields_to_include:
+                optional_fields[field_name] = (Optional[field_type], None)
+        new_model = create_model(
+            model_cls.__name__ + 'Optional',
+            __base__=model_cls,
+            **optional_fields
+        )
+        return new_model
+    return decorator
 
 
-from typing import Any
-from pydantic import BaseModel
-
-from typing import Any
-from pydantic import BaseModel
 
 def render_model(model: Any, indent: int = 0) -> str:
     spacer = "  " * indent

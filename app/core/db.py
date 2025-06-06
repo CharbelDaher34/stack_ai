@@ -28,10 +28,14 @@ def get_session():
 
 
 # Function to create DB and tables (call this from main.py on startup)
-def create_db_and_tables():
+def create_db_and_tables(delete_tables: bool = False):
     # Import all your models here so they are registered with SQLModel's metadata
     from core.models import Library, Document, Chunk 
     
     # This will create tables for all models that inherit from SQLModel
     # and have table=True
+    if delete_tables:
+        SQLModel.metadata.drop_all(engine)
+        print("Tables dropped")
     SQLModel.metadata.create_all(engine) 
+    print("Tables created")

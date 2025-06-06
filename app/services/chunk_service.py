@@ -4,7 +4,7 @@ from typing import List, Optional, Tuple, Dict, Any, Union
 from datetime import datetime
 from sqlmodel import Session
 from infrastructure.repositories.chunk_repository import ChunkRepository
-from core.models.chunk_model import Chunk, ChunkCreate, ChunkUpdate
+from core.models.chunk_model import Chunk, ChunkCreate, ChunkUpdate, ChunkCreateRequest
 from infrastructure.indexing.linear_index import LinearIndex
 from infrastructure.indexing.kd_tree import KDTreeIndex
 from sentence_transformers import SentenceTransformer
@@ -15,12 +15,12 @@ class ChunkService:
         self.chunk_repository = ChunkRepository(session)
         self.model = SentenceTransformer("all-MiniLM-L6-v2")
         # self.cohere_client = Client(api_key=os.getenv("COHERE_API_KEY"))
-    def create_chunk(self, chunk_create: ChunkCreate) -> Chunk:
+    def create_chunk(self, chunk_create: ChunkCreateRequest) -> Chunk:
         """Create a new chunk with business logic validation."""
         # Business logic: validate that document exists could go here
         # Validate embedding dimension consistency could go here
         embedding = self.model.encode(chunk_create.text)
-        chunk_create.embedding = embedding.tolist()
+        chunk_create=ChunkCreate(text=chunk_create.text,document_id=chunk_create.document_id,embedding=embedding.tolist())
         db_chunk = Chunk.model_validate(chunk_create)
         return self.chunk_repository.create(db_chunk)
 

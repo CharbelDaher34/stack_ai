@@ -1,3 +1,4 @@
+
 import uuid
 import logging
 from typing import List, Optional, Dict, Any, Union, Tuple
@@ -10,9 +11,9 @@ from .linear_index import LinearIndex
 from .kd_tree import KDTreeIndex
 from .ball_tree import BallTree
 # Import Chunk model for type hinting in _get_chunks if necessary
-from core.models import Chunk 
+from core.models import Chunk, ChunkRead
 from sentence_transformers import SentenceTransformer
-
+import os
 logger = logging.getLogger(__name__)
 
 
@@ -22,19 +23,21 @@ class IndexBuilder:
     Uses the service layer to read data and populate indexing structures.
     """
     
-    def __init__(self, session: Session):
+    def __init__(self, session: Session,index_types: List[str]):
         self.session = session
         self.chunk_service = ChunkService(session)
         self.document_service = DocumentService(session)
         self.library_service = LibraryService(session)
         self.model = SentenceTransformer("all-MiniLM-L6-v2")
-        self.index: Union[LinearIndex, KDTreeIndex, BallTree] = None
+        self.index: Dict[str, Union[LinearIndex, BallTree, KDTreeIndex]] = {}
+        for index_type in index_types:
+            self.build_index(index_type)
     def build_index(
         self,
         index_type: str,
         library_id: Optional[uuid.UUID] = None,
         document_id: Optional[uuid.UUID] = None
-    ) -> Union[LinearIndex, KDTreeIndex]:
+    ) -> Tuple[Union[LinearIndex, BallTree, KDTreeIndex], float]:
         """Builds a single index of the specified type."""
         logger.info(f"Building {index_type} index for library_id={library_id}, document_id={document_id}")
 
@@ -47,46 +50,42 @@ class IndexBuilder:
             vectors.append(chunk.embedding)
         if not all_retrieved_chunks:
             logger.warning(f"No chunks found to build {index_type} index for scope: library_id={library_id}, document_id={document_id}. Building empty index.")
-            return self.index
+            return self.index[index_type]
         else:
             start_time = time.time()
             if index_type == "linear":
                 start_time = time.time()
-                self.index: LinearIndex = LinearIndex(vectors=vectors, ids=ids) 
-            elif index_type == "kd_tree":
-                self.index: KDTreeIndex = KDTreeIndex(vectors=vectors, ids=ids) 
+                self.index[index_type] = LinearIndex(vectors=vectors, ids=ids) 
+            elif index_type == "kd_tree": 
+                self.index[index_type] = KDTreeIndex(vectors=vectors, ids=ids)
             elif index_type == "ball_tree":
-                self.index: BallTree = BallTree(vectors=vectors, ids=ids) 
+                self.index[index_type] = BallTree(vectors=vectors, ids=ids) 
             else:
                 logger.error(f"Unsupported index type: {index_type}")
                 raise ValueError(f"Unsupported index type: {index_type}")
             end_time = time.time()
-            print(f"Time taken to build {index_type} index: {end_time - start_time} seconds")
-        # added_count = 0
-        # for chunk_data in all_retrieved_chunks:
-        #     if chunk_data.embedding and isinstance(chunk_data.embedding, list) and len(chunk_data.embedding) > 0:
-        #         self.index.add_vector(chunk_data.embedding, str(chunk_data.id))
-        #         added_count += 1
-               
-        #     else:
-        #         logger.warning(f"Skipping chunk {chunk_data.id} for {index_type} index due to empty or invalid embedding. Scope: library_id={library_id}, document_id={document_id}")
-        
-        # if added_count == 0:
-        #     logger.warning(f"No valid vectors were added to {index_type} index after filtering. Scope: library_id={library_id}, document_id={document_id}. Building empty index.")
-        #     return self.index
-        # print(f"Added {added_count} vectors to {index_type} index")
-        print(f"Vectors: {len(self.index.vectors)}")
-        print(f"Ids: {len(self.index.ids)}")
-        return self.index
-  
-    def search_index(self, query: str, k: int) -> List[Tuple[str, float]]:
+    
+
+        print(f"Build time for {index_type}: {end_time - start_time} seconds")
+        return self.index[index_type]
+    def add_vector(self, vector: List[float], id: uuid.UUID):
+        """Adds a vector to the index."""
+        for index_type in self.index.keys():
+            self.index[index_type].add_vector(vector, str(id))
+
+    def search_index(self, query: str, k: int,index_type: str) -> List[ChunkRead]:
         """Searches the index for the nearest neighbors to the query vector."""
         query_embedding = self.model.encode(query)
         start_time = time.time()
-        result = self.index.search(query_embedding, k)
+        result = self.index[index_type].search(query_embedding, k)
         end_time = time.time()
-        print(f"Time taken to search {self.index.__class__.__name__} index: {end_time - start_time} seconds")
-        return result
+        
+        list_of_chunks=[]
+        for chunk_id, distance in result:
+            chunk = self.chunk_service.get_chunk(chunk_id)
+            list_of_chunks.append(chunk)
+        print(f"Search time for {index_type}: {end_time - start_time} seconds")
+        return list_of_chunks#, end_time - start_time
    
     
     def _get_chunks(
