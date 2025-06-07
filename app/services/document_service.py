@@ -6,16 +6,19 @@ from infrastructure.repositories.document_repository import DocumentRepository
 from infrastructure.repositories.chunk_repository import ChunkRepository
 from core.models import Document, DocumentCreate, DocumentUpdate
 from fastapi import HTTPException
-
+from services.library_service import LibraryService 
 class DocumentService:
     def __init__(self, session: Session):
         self.document_repository = DocumentRepository(session)
         self.chunk_repository = ChunkRepository(session)
-
+        self.library_service = LibraryService(session)
     def create_document(self, document_create: DocumentCreate) -> Document:
         """Create a new document with business logic validation."""
         # Business logic: validate that library exists could go here
         db_document = Document.model_validate(document_create)
+        library = self.library_service.get_library(document_create.library_id)
+        if not library:
+            raise HTTPException(status_code=404, detail="Library not found")
         return self.document_repository.create(db_document)
 
     def get_document(self, document_id: uuid.UUID) -> Optional[Document]:

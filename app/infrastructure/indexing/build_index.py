@@ -96,7 +96,8 @@ class IndexBuilder:
         """Adds a vector to the index."""
         if random_chunk:
             chunk=self.chunk_service.create_chunk(ChunkCreateRequest(text=text,document_id=str(uuid.uuid4())),random_chunk=True)
-       
+        else:
+            chunk=self.chunk_service.create_chunk(ChunkCreateRequest(text=text,document_id=str(uuid.uuid4())),random_chunk=True)
         vector = self.model.encode(text)
         self.add_vector(vector, chunk.id)
     
