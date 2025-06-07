@@ -17,9 +17,8 @@ RUN uv lock && \
 # Copy the application code
 COPY app/ .
 
-# Make port 80 available to the world outside this container
+# Make port 8018 available to the world outside this container
 EXPOSE 8018
+RUN chmod +x /entrypoint.sh
 
-# Run the application using python -m to ensure we use the installed package
-CMD ["uv", "run","initialize_db.py"]
-CMD ["uv", "run","main.py"]
+ENTRYPOINT  ["/entrypoint.sh"]

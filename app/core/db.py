@@ -4,7 +4,7 @@ from sqlalchemy.engine import Engine
 import os
 from typing import Optional
 import logging
-from scripts.populate_db import create_sample_data
+
 # Set up logging
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
@@ -47,8 +47,6 @@ def get_session():
     with Session(engine) as session:
         yield session
 
-
-
 # Function to create DB and tables (call this from main.py on startup)
 def create_db_and_tables(delete_tables: bool = False):
     # Import all your models here so they are registered with SQLModel's metadata
@@ -61,7 +59,3 @@ def create_db_and_tables(delete_tables: bool = False):
         print("Tables dropped")
     SQLModel.metadata.create_all(engine) 
     print("Tables created")
-    
-def initialize_db():
-    create_db_and_tables()
-    create_sample_data(num_libraries=10, docs_per_library=10, chunks_per_doc=10)

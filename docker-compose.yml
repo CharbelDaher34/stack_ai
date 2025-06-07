@@ -15,6 +15,7 @@ services:
       POSTGRES_PASSWORD: charbel
       POSTGRES_DB: stack_ai
       DATABASE_URL: postgresql://charbel:charbel@db:5432/stack_ai
+    
     depends_on:
       db:
         condition: service_healthy
