@@ -21,4 +21,5 @@ COPY app/ .
 EXPOSE 8018
 
 # Run the application using python -m to ensure we use the installed package
+CMD ["uv", "run","initialize_db.py"]
 CMD ["uv", "run","main.py"]
