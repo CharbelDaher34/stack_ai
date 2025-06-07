@@ -21,10 +21,30 @@ For the database, we chose **PostgreSQL** along with **SQLModel**.
 
 ### Indexing
 
-We have implemented two indexing algorithms from scratch:
+We have implemented two indexing algorithms from scratch. Below is a detailed explanation of each.
 
-*   **Linear Index**: This was chosen for its simplicity of implementation. It performs a brute-force search, which is accurate but can be slow for large datasets.
-*   **Ball Tree**: A space-partitioning data structure that is efficient for searching due to its pruning capabilities. However, its performance can degrade in high-dimensional spaces.
+#### Linear Index (`linear_index.py`)
+
+The Linear Index is the most straightforward approach to similarity search. It iterates through every vector in the database, computes the distance to the query vector, and returns the top `k` nearest neighbors.
+
+*   **Description**: This method provides guaranteed accuracy by performing a brute-force search. While simple to implement, its performance degrades linearly with the size of the dataset.
+*   **Space Complexity**: `O(N * D)`, where `N` is the number of vectors and `D` is their dimension.
+*   **Time Complexity**:
+    *   **Search**: `O(N * D)` per query.
+    *   **Add**: `O(D)` to append a vector.
+    *   **Delete**: `O(N)` to find and remove a vector.
+
+#### Ball Tree (`ball_tree.py`)
+
+The Ball Tree is a more advanced data structure that partitions data into a series of nested hyperspheres ("balls"). This hierarchical structure allows for efficient searching by pruning entire branches of the tree that cannot possibly contain the nearest neighbors.
+
+*   **Description**: By recursively dividing the data space, the Ball Tree avoids the need to compare the query vector with every single point, leading to significant performance gains on large datasets. However, its efficiency can decrease in very high-dimensional spaces (a phenomenon often called the "curse of dimensionality").
+*   **Space Complexity**: `O(N * D)`, as it must store all vectors, plus a small overhead for the tree structure.
+*   **Time Complexity**:
+    *   **Build**: `O(N * D * log(N))`
+    *   **Search (Average)**: `O(D * log(N))`
+    *   **Search (Worst Case)**: `O(N * D)`
+    *   **Add/Delete**: `O(D * log(N))` on average.
 
 ## Project Structure
 
