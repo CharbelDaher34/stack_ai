@@ -8,7 +8,6 @@ from core.models.chunk_model import Chunk, ChunkCreate, ChunkUpdate, ChunkCreate
 from infrastructure.indexing.linear_index import LinearIndex
 from infrastructure.indexing.kd_tree import KDTreeIndex
 from sentence_transformers import SentenceTransformer
-from cohere import Client
 from fastapi import HTTPException
 class ChunkService:
     def __init__(self, session: Session):
