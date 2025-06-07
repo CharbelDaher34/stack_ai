@@ -1,0 +1,60 @@
+version: "3.8"
+services:
+  app:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: stack_ai_app
+    restart: always
+    ports:
+      - "8018:8018"
+    environment:
+      - DATABASE_URL=postgresql://charbel:charbel@db:5432/stack_ai
+      - POSTGRES_HOST=db
+      - POSTGRES_PORT=5432
+      - POSTGRES_USER=charbel
+      - POSTGRES_PASSWORD=charbel
+      - POSTGRES_DB=stack_ai
+    depends_on:
+      - db
+    networks:
+      - app_network
+
+  db:
+    image: postgres:latest
+    container_name: postgresdb
+    restart: always
+    ports:
+      - "5437:5432"
+    environment:
+      POSTGRES_USER: charbel
+      POSTGRES_PASSWORD: charbel
+      POSTGRES_DB: stack_ai
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    networks:
+      - app_network
+
+  pgadmin:
+    image: dpage/pgadmin4:latest
+    container_name: pgadmin4_container
+    restart: always
+    ports:
+      - "8888:80"
+    environment:
+      PGADMIN_DEFAULT_EMAIL: charbeldaher34@gmail.com
+      PGADMIN_DEFAULT_PASSWORD: charbel
+    volumes:
+      - pgadmin_data:/var/lib/pgadmin
+    networks:
+      - app_network
+    depends_on:
+      - db
+
+networks:
+  app_network:
+    driver: bridge
+
+volumes:
+  postgres_data:
+  pgadmin_data:
