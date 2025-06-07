@@ -109,7 +109,7 @@ def update_chunk_endpoint(
     updated_chunk = chunk_service.update_chunk(chunk_id=chunk_id, chunk_update=chunk_update)
     if updated_chunk is None:
         raise HTTPException(status_code=404, detail="Chunk not found")
-    index_manager.add_vector(updated_chunk.embedding,updated_chunk.id)
+    # index_manager.add_vector(updated_chunk.embedding,updated_chunk.id)
     
     return updated_chunk
 
@@ -123,6 +123,7 @@ def delete_chunk_endpoint(
     """
     if not chunk_service.delete_chunk(chunk_id):
         raise HTTPException(status_code=404, detail="Chunk not found or could not be deleted")
+    index_manager.delete_vector(chunk_id)
     return {"message": "Chunk deleted successfully"}
 
 @router.delete("/document/{document_id}", response_model=dict)
@@ -133,13 +134,15 @@ def delete_chunks_by_document_endpoint(
     """
     Delete all chunks for a specific document.
     """
-    deleted_count = chunk_service.delete_chunks_by_document(document_id)
-    if deleted_count == 0:
+    deleted_chunk_ids = chunk_service.delete_chunks_by_document(document_id)
+    if len(deleted_chunk_ids) == 0:
         # This could mean the document had no chunks, or the document_id itself was not found.
         # Depending on desired behavior, you might not raise an error here.
         # For now, we'll assume it's okay if no chunks were deleted.
         pass
-    return {"message": f"Successfully deleted {deleted_count} chunks for document {document_id}"}
+    for chunk_id in deleted_chunk_ids:
+        index_manager.delete_vector(chunk_id)
+    return {"message": f"Successfully deleted {len(deleted_chunk_ids)} chunks for document {document_id}"}
 
 class SearchResponse(BaseModel):
     list_of_chunks: Dict[str,List[str]]

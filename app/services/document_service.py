@@ -1,5 +1,5 @@
 import uuid
-from typing import List, Optional
+from typing import List, Optional, Tuple
 from datetime import datetime,timezone
 from sqlmodel import Session
 from infrastructure.repositories.document_repository import DocumentRepository
@@ -60,18 +60,17 @@ class DocumentService:
         # Then delete the document
         return self.document_repository.delete(document_id)
 
-    def delete_documents_by_library(self, library_id: uuid.UUID) -> int:
+    def delete_documents_by_library(self, library_id: uuid.UUID) -> Tuple[List[uuid.UUID], List[uuid.UUID]]:
         """Delete all documents in a library and their chunks."""
         # Get all documents in the library
         documents = self.document_repository.get_by_library_id(library_id)
         
         # Delete chunks for each document
-        total_chunks_deleted = 0
+        chunks_ids_deleted=[]
         for document in documents:
-            chunks_deleted = self.chunk_repository.delete_by_document_id(document.id)
-            total_chunks_deleted += chunks_deleted
+            chunks_ids_deleted.extend(self.chunk_repository.delete_by_document_id(document.id))
         
         # Delete all documents in the library
-        documents_deleted = self.document_repository.delete_by_library_id(library_id)
+        documents_ids_deleted = self.document_repository.delete_by_library_id(library_id)
         
-        return documents_deleted
+        return chunks_ids_deleted,documents_ids_deleted

@@ -63,5 +63,10 @@ class LinearIndex:
         sorted_indices = np.argsort(distances)[:actual_k]
         return [(self.ids[i], distances[i]) for i in sorted_indices]
     
+    def delete_vector(self,id:uuid.UUID):
+        index=self.ids.index(id)
+        self.vectors.pop(index)
+        self.ids.pop(index)
+    
     # Space: O(n*d), Time: O(n*d) per query after build
     # Chosen for simplicity and exact results

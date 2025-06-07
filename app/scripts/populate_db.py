@@ -22,8 +22,6 @@ fake = Faker()
 def create_sample_data(num_libraries: int, docs_per_library: int, chunks_per_doc: int):
     """Create sample libraries, documents, and chunks."""
     
-    # Create database tables if they don't exist
-    create_db_and_tables()
     
     with Session(engine) as session:
         library_service = LibraryService(session)

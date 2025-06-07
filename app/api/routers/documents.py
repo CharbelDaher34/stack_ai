@@ -7,6 +7,7 @@ from sqlmodel import Session
 from core.db import get_session
 from core.models import Document, DocumentCreate, DocumentRead, DocumentUpdate # Adjusted import path
 from services.document_service import DocumentService
+from api.routers.chunks import index_manager
 
 router = APIRouter(
     prefix="/documents",
@@ -103,7 +104,10 @@ def delete_documents_by_library_endpoint(
     """
     Delete all documents in a library and their chunks.
     """
-    deleted_count = document_service.delete_documents_by_library(library_id)
-    # No specific check for deleted_count == 0 here, as service handles underlying logic.
-    # Service might return 0 if library was empty or not found.
-    return {"message": f"Successfully deleted {deleted_count} documents and their associated chunks from library {library_id}"}
+    chunks_ids_deleted, documents_ids_deleted = document_service.delete_documents_by_library(library_id)
+    
+    # Delete vectors from index for all deleted chunks
+    for chunk_id in chunks_ids_deleted:
+        index_manager.delete_vector(chunk_id)
+    
+    return {"message": f"Successfully deleted {len(chunks_ids_deleted)} chunks and {len(documents_ids_deleted)} documents from library {library_id}"}

@@ -200,6 +200,67 @@ class BallTree:
         final_results.sort(key=lambda x: x[1])
         
         return final_results
+    
+    def _find_path_to_id(self, node, id, path):
+        path.append(node)
+        if node.is_leaf():
+            if id in node.ids:
+                return True
+            else:
+                path.pop()
+                return False
+        # Check left and right children
+        found = False
+        if node.left:
+            found = self._find_path_to_id(node.left, id, path)
+        if not found and node.right:
+            found = self._find_path_to_id(node.right, id, path)
+        if not found:
+            path.pop()
+        return found
+    
+    def _get_path_to_node(self, id):
+        path = []
+        if self.root and self._find_path_to_id(self.root, id, path):
+            return path
+        return None
+    
+    def delete_vector(self, id: uuid.UUID):
+        # Remove from global storage
+        try:
+            index = self.ids.index(id)
+            self.vectors.pop(index)
+            self.ids.pop(index)
+        except ValueError:
+            return  # ID not found
+    
+        # Find the path to the node containing the ID
+        path = self._get_path_to_node(id)
+        if not path:
+            return  # ID not found in tree
+    
+        leaf_node = path[-1]
+    
+        # Remove the ID and corresponding point
+        try:
+            idx = leaf_node.ids.index(id)
+        except ValueError:
+            return  # Inconsistency between global and local storage
+    
+        leaf_node.points.pop(idx)
+        leaf_node.ids.pop(idx)
+    
+        # Recompute leaf node's centroid and radius
+        if leaf_node.points:
+            leaf_node.centroid = np.mean(leaf_node.points, axis=0)
+            leaf_node.radius = max(np.linalg.norm(p - leaf_node.centroid) for p in leaf_node.points)
+        else:
+            leaf_node.centroid = None
+            leaf_node.radius = 0
+    
+        # Update all ancestor nodes' bounds
+        for i in range(len(path) - 2, -1, -1):  # Start from parent of leaf
+            self._update_node_bounds(path[i])
 # Example usage (keeping for compatibility)
 if __name__ == "__main__":
     # Generate sample 2D points

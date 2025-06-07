@@ -1,9 +1,9 @@
 import uuid
-from typing import List, Optional
+from typing import List, Optional, Tuple
 from datetime import datetime
 from sqlmodel import Session
 from infrastructure.repositories.library_repository import LibraryRepository
-from core.models import Library, LibraryCreate, LibraryRead # Assuming LibraryUpdate will be similar to LibraryCreate
+from core.models import Library, LibraryCreate, LibraryRead, LibraryUpdate # Assuming LibraryUpdate will be similar to LibraryCreate
 from core.db import get_session # To be used with FastAPI Depends
 
 class LibraryService:
@@ -27,7 +27,7 @@ class LibraryService:
         """Update a library with business logic validation."""
         return self.repository.update_library(library_id, library_update_data)
 
-    def delete_library(self, library_id: uuid.UUID) -> Optional[Library]:
+    def delete_library(self, library_id: uuid.UUID) -> Optional[Tuple[List[uuid.UUID], List[uuid.UUID], Optional[Library]]]:
         """
         Delete a library and all its associated documents and chunks.
         This is a cascade delete operation.
@@ -42,12 +42,12 @@ class LibraryService:
         
         # Delete all documents (and their chunks) in the library
         document_service = DocumentService(self.repository.session)
-        documents_deleted = document_service.delete_documents_by_library(library_id)
+        chunks_ids_deleted, documents_ids_deleted = document_service.delete_documents_by_library(library_id)
         
         # Delete the library
-        deleted_library = self.repository.delete_library(library_id)
+        library_deleted = self.repository.delete_library(library_id)
         
-        return deleted_library
+        return chunks_ids_deleted, documents_ids_deleted, library_deleted
 
     def index_library(self, library_id: uuid.UUID) -> bool:
         """

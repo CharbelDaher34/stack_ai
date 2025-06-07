@@ -1,12 +1,14 @@
 import uuid
 from typing import List, Dict, Any
 
-from fastapi import APIRouter, Depends, HTTPException, status
+from fastapi import APIRouter, Depends, HTTPException, status, Response
 from sqlmodel import Session
 
 from core.db import get_session
 from core.models import Library, LibraryCreate, LibraryRead
 from services.library_service import LibraryService
+
+from api.routers.chunks import index_manager
 
 router = APIRouter(
     prefix="/libraries",
@@ -77,7 +79,16 @@ def delete_library(
     """
     Delete a specific library and its associated documents and chunks.
     """
-    deleted_library = service.delete_library(library_id)
-    if deleted_library is None:
-        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Library not found or could not be deleted")
-    return # HTTP 204 No Content
+    result = service.delete_library(library_id)
+    if result is None:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Library not found")
+
+    chunks_ids_deleted, documents_ids_deleted, library_deleted = result
+    
+    if library_deleted is None:
+        raise HTTPException(status_code=500, detail="Failed to delete library.")
+
+    for chunk_id in chunks_ids_deleted:
+        index_manager.delete_vector(chunk_id)
+
+    return Response(status_code=status.HTTP_204_NO_CONTENT)

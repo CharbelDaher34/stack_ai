@@ -34,7 +34,6 @@ def create_db_and_tables(delete_tables: bool = False):
     
     # This will create tables for all models that inherit from SQLModel
     # and have table=True
-    print(f"Creating tables with delete_tables: {delete_tables}")
     if delete_tables:
         SQLModel.metadata.drop_all(engine)
         print("Tables dropped")

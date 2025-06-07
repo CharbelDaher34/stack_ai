@@ -20,7 +20,6 @@ print("Starting tests...")
 def test_client():
     """Create a test client for the FastAPI app."""
     print("Creating test client...")
-    create_db_and_tables(delete_tables=False)
     return TestClient(app)
 
 
@@ -481,6 +480,54 @@ class TestAPIIntegration:
         
         chunk_check = test_client.get(f"/chunks/{chunk_id}")
         assert chunk_check.status_code == 404
+
+    def test_search_after_cascade_deletion(self, test_client: TestClient, sample_library_data: Dict[str, Any], sample_document_data: Dict[str, Any], sample_chunk_data: Dict[str, Any]):
+        """Test that chunks are not found in search after a library is deleted."""
+        # 1. Create library
+        library_response = test_client.post("/libraries/", json=sample_library_data)
+        assert library_response.status_code == 201
+        library_id = library_response.json()["id"]
+        
+        # 2. Create document
+        document_data = sample_document_data.copy()
+        document_data["library_id"] = library_id
+        document_response = test_client.post("/documents/", json=document_data)
+        assert document_response.status_code == 200
+        document_id = document_response.json()["id"]
+        
+        # 3. Create chunk with unique text
+        unique_chunk_text = f"unique chunk for deletion test {uuid.uuid4()}"
+        chunk_data = {
+            "text": unique_chunk_text,
+            "document_id": document_id
+        }
+        chunk_response = test_client.post("/chunks/", json=chunk_data)
+        assert chunk_response.status_code == 200
+        
+        # 4. Search for the chunk to ensure it's indexed
+        search_params = {
+            "query": unique_chunk_text,
+            "k": 1,
+            "index_types": ["linear", "ball_tree"]
+        }
+        search_response_before = test_client.post("/chunks/search", params=search_params)
+        assert search_response_before.status_code == 200
+        
+        results_before = search_response_before.json()["list_of_chunks"]
+        assert results_before["linear"][0] == unique_chunk_text
+        assert results_before["ball_tree"][0] == unique_chunk_text
+
+        # 5. Delete the library
+        delete_response = test_client.delete(f"/libraries/{library_id}")
+        assert delete_response.status_code == 204
+        
+        # 6. Search for the chunk again
+        search_response_after = test_client.post("/chunks/search", params=search_params)
+        assert search_response_after.status_code == 200
+        print(search_response_after.json())
+        results_after = search_response_after.json()["list_of_chunks"]
+        assert unique_chunk_text not in results_after["linear"]
+        assert unique_chunk_text not in results_after["ball_tree"]
 
 
 # Health Check Test

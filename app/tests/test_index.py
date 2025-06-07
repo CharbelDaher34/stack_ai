@@ -8,13 +8,13 @@ from core.db import get_session, create_db_and_tables
 from scripts.populate_db import create_sample_data
 from core.models import Chunk
 import time
+from faker import Faker
 
 @pytest.fixture(scope="module")
 def db_session():
     """Fixture to create a new database and tables for the test module."""
     print("🔧 Setting up database session fixture...")
-    create_db_and_tables(delete_tables=True)
-    create_sample_data(num_libraries=2, docs_per_library=2, chunks_per_doc=2)
+    create_db_and_tables(delete_tables=False)
     session = next(get_session())
     print("✅ Database session created successfully")
     yield session
@@ -117,3 +117,36 @@ def test_multiple_searches(index_builder: IndexBuilder):
     
     print("✅ test_multiple_searches completed successfully\n")
 
+
+def test_index_builder_delete_vector(index_builder: IndexBuilder):
+    """Test deleting a vector from the index."""
+    fake = Faker()
+    text = fake.text()
+    print("\n🧪 Running test_index_builder_delete_vector...")
+    print(f"📝 Adding vector with text '{text}' and id 'test_id'")
+    index_builder.add_vector_by_text(text)
+    print("✅ Vector added to index successfully")
+    
+    print(f"🔍 Searching for '{text}' in linear index...")
+    result = index_builder.search_index(text, 1, "linear")
+    print(f"📊 Search result in linear index: {[chunk.text for chunk in result]}")
+    
+    print(f"🔍 Searching for '{text}' in ball tree index...")
+    result = index_builder.search_index(text, 1, "ball_tree")
+    print(f"📊 Search result in ball tree index: {[chunk.text for chunk in result]}")
+    
+    print("🔍 Deleting vector with id 'test_id'")
+    index_builder.delete_vector(result[0].id)
+    print("✅ Vector deleted from index successfully")
+    
+    print(f"🔍 Searching for '{text}' in linear index...")
+    result = index_builder.search_index(text, 1, "linear")
+    print(f"📊 Search result in linear index: {[chunk.text for chunk in result]}")
+    
+    assert text not in [chunk.text for chunk in result], f"Expected '{text}' not to be in results, got {len(result)}"
+    result = index_builder.search_index(text, 1, "ball_tree")
+    print(f"📊 Search result in ball tree index: {[chunk.text for chunk in result]}")
+    assert text not in [chunk.text for chunk in result], f"Expected '{text}' not to be in results, got {len(result)}"
+    
+    print("✅ test_index_builder_delete_vector completed successfully\n")
+    

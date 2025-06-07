@@ -60,12 +60,8 @@ def run_tests_with_verbose_output():
 def check_test_functions():
     """Check which test functions are defined in the test file."""
     print("\n🔍 Analyzing test file for test functions...")
-    
-    test_file = Path("tests/test_index.py")
-    if not test_file.exists():
-        test_file = Path("app/tests/test_index.py")
-    
-    if test_file.exists():
+    for test_file in Path("tests").glob("test_*.py"):
+        print(f"🔍 Analyzing {test_file}...")
         with open(test_file, 'r') as f:
             content = f.read()
         
@@ -89,6 +85,54 @@ def check_test_functions():
     else:
         print("❌ Test file not found!")
 
+def run_single_test_file(test_file):
+    """Run a single test file with verbose output."""
+    print(f"\n🧪 Running tests in {test_file}...")
+    print("=" * 60)
+    
+    test_cmd = [
+        sys.executable, "-m", "pytest",
+        "-v",  # verbose
+        "-s",  # don't capture output
+        "--tb=short",  # shorter traceback format
+        "--durations=10",  # show 10 slowest tests
+        str(test_file)
+    ]
+    
+    try:
+        result = subprocess.run(test_cmd, text=True)
+        return result.returncode
+    except Exception as e:
+        print(f"❌ Error running tests in {test_file}: {e}")
+        return 1
+
+def run_all_test_files_individually():
+    """Run each test file separately and report results."""
+    print("\n🧪 Running all test files individually...")
+    print("=" * 60)
+    
+    test_files = list(Path("tests").glob("test_*.py"))
+    if not test_files:
+        print("❌ No test files found!")
+        return 1
+    
+    results = {}
+    for test_file in test_files:
+        exit_code = run_single_test_file(test_file)
+        results[test_file] = exit_code
+        print(f"\n📊 Result for {test_file}: {'✅ Passed' if exit_code == 0 else '❌ Failed'}")
+    
+    print("\n" + "=" * 60)
+    print("📊 Individual Test Files Summary:")
+    all_passed = True
+    for test_file, exit_code in results.items():
+        status = "✅ Passed" if exit_code == 0 else "❌ Failed"
+        print(f"{status}: {test_file}")
+        if exit_code != 0:
+            all_passed = False
+    
+    return 0 if all_passed else 1
+
 def main():
     """Main function to run comprehensive test analysis."""
     print("🧪 Comprehensive Test Runner")
@@ -99,15 +143,15 @@ def main():
     
     print("\n" + "=" * 60)
     
-    # Run the tests
-    exit_code = run_tests_with_verbose_output()
+    # Run each test file individually
+    exit_code = run_all_test_files_individually()
     
     print("\n" + "=" * 60)
     print("📊 Test Run Summary:")
     if exit_code == 0:
-        print("✅ All tests passed successfully!")
+        print("✅ All test files passed successfully!")
     else:
-        print(f"❌ Tests failed with exit code: {exit_code}")
+        print(f"❌ Some test files failed with exit code: {exit_code}")
     
     print("\n💡 Tips for ensuring all tests run:")
     print("  1. All test functions must start with 'test_'")

@@ -47,14 +47,14 @@ class ChunkRepository:
             return True
         return False
     
-    def delete_by_document_id(self, document_id: uuid.UUID) -> int:
+    def delete_by_document_id(self, document_id: uuid.UUID) -> List[uuid.UUID]:
         statement = select(Chunk).where(Chunk.document_id == document_id)
         chunks = self.session.exec(statement).all()
-        count = len(chunks)
+        chunk_ids=[chunk.id for chunk in chunks]
         for chunk in chunks:
             self.session.delete(chunk)
         self.session.commit()
-        return count
+        return chunk_ids
     
     def get_random_document_id(self) -> uuid.UUID:
         chunks=self.get_all(limit=1)

@@ -41,11 +41,11 @@ class DocumentRepository:
             return True
         return False
     
-    def delete_by_library_id(self, library_id: uuid.UUID) -> int:
+    def delete_by_library_id(self, library_id: uuid.UUID) -> List[uuid.UUID]:
         statement = select(Document).where(Document.library_id == library_id)
         documents = self.session.exec(statement).all()
-        count = len(documents)
+        document_ids=[document.id for document in documents]
         for document in documents:
             self.session.delete(document)
         self.session.commit()
-        return count
+        return document_ids

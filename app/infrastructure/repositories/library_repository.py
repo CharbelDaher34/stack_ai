@@ -46,17 +46,7 @@ class LibraryRepository:
     def delete_library(self, library_id: uuid.UUID) -> Optional[Library]:
         db_library = self.session.get(Library, library_id)
         if not db_library:
-            return None
-        
-        # Store the library data before deletion
-        library_copy = Library(
-            id=db_library.id,
-            name=db_library.name,
-            created_at=db_library.created_at,
-            updated_at=db_library.updated_at,
-        )
-        
+            return None        
         self.session.delete(db_library)
         self.session.commit()
-        
-        return library_copy 
+        return db_library

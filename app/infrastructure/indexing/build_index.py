@@ -7,14 +7,14 @@ from core.models import ChunkCreateRequest
 import uuid
 import logging
 from typing import List, Optional, Dict, Any, Union, Tuple
-from core.db import get_session
+from core.db import get_session, create_db_and_tables
 from sqlmodel import Session
 import time
 import threading
 from services.chunk_service import ChunkService
 from services.document_service import DocumentService  
 from services.library_service import LibraryService
-
+from scripts.populate_db import create_sample_data
 # Import Chunk model for type hinting in _get_chunks if necessary
 from core.models import Chunk, ChunkRead
 from sentence_transformers import SentenceTransformer
@@ -64,7 +64,7 @@ class IndexBuilder:
             vectors.append(chunk.embedding)
         if not all_retrieved_chunks:
             logger.warning(f"No chunks found to build {index_type} index for scope: library_id={library_id}, document_id={document_id}. Building empty index.")
-            return self.index[index_type]
+            raise ValueError(f"No chunks found to build {index_type} index for scope: library_id={library_id}, document_id={document_id}")
         else:
             start_time = time.time()
             if index_type == "linear":
@@ -115,7 +115,8 @@ class IndexBuilder:
             if chunk:   
                 list_of_chunks.append(chunk)
             else:
-                list_of_chunks.append({"id":chunk_id,"distance":distance})
+                logger.warning(f"Chunk {chunk_id} not found in database")
+            
         print(f"Search time for {index_type}: {end_time - start_time} seconds")
         return list_of_chunks#, end_time - start_time
    
@@ -139,47 +140,55 @@ class IndexBuilder:
             return all_chunks
         else:
             return self.chunk_service.get_all_chunks(limit=100000, for_indexing=True) # High limit for global indexing
-
-if __name__ == "__main__":
-    print("Starting index builder")
-    session = next(get_session())
-    index_builder = IndexBuilder(session, index_types=["ball_tree", "linear"])
     
-    # Print initial state
-    print("\nInitial state:")
-    print(f"Ball tree vectors: {len(index_builder.index['ball_tree'].vectors)}")
-    print(f"Linear index vectors: {len(index_builder.index['linear'].vectors)}")
+    def delete_vector(self,id:uuid.UUID):
+        with self._lock:
+            for index_type in self.index.keys():
+                self.index[index_type].delete_vector(id)
+                
     
-    # Test text to add
-    test_text = "i am charbel daher and i am a bad person"
-    print(f"\nAdding test text: {test_text}")
+# if __name__ == "__main__":
+#     print("Starting index builder")
+#     session = next(get_session())
+#     index_builder = IndexBuilder(session, index_types=["ball_tree", "linear"])
+    
+#     # Print initial state
+#     print("\nInitial state:")
+#     print(f"Ball tree vectors: {len(index_builder.index['ball_tree'].vectors)}")
+#     print(f"Linear index vectors: {len(index_builder.index['linear'].vectors)}")
+    
+#     # Test text to add
+#     test_text = "i am charbel daher and i am a bad person"
+#     print(f"\nAdding test text: {test_text}")
     
  
   
-    index_builder.add_vector_by_text(test_text)
+#     index_builder.add_vector_by_text(test_text)
     
-    # Print state after adding
-    print("\nState after adding vector:")
-    print(f"Ball tree vectors: {len(index_builder.index['ball_tree'].vectors)}")
-    print(f"Ball tree IDs: {len(index_builder.index['ball_tree'].ids)}")
-    print(f"Linear index vectors: {len(index_builder.index['linear'].vectors)}")
-    print(f"Linear index IDs: {len(index_builder.index['linear'].ids)}")
+#     # Print state after adding
+#     print("\nState after adding vector:")
+#     print(f"Ball tree vectors: {len(index_builder.index['ball_tree'].vectors)}")
+#     print(f"Ball tree IDs: {len(index_builder.index['ball_tree'].ids)}")
+#     print(f"Linear index vectors: {len(index_builder.index['linear'].vectors)}")
+#     print(f"Linear index IDs: {len(index_builder.index['linear'].ids)}")
     
   
-    # Verify vector was added by searching immediately
-    print("\nSearching with ball_tree index...")
-    ball_tree_results = index_builder.search_index(test_text, 1, "ball_tree")  # Increased k to see more results
-    print(f"Ball tree results: {[chunk.text for chunk in ball_tree_results]}")
+#     # Verify vector was added by searching immediately
+#     print("\nSearching with ball_tree index...")
+#     ball_tree_results = index_builder.search_index(test_text, 1, "ball_tree")  # Increased k to see more results
+#     print(f"Ball tree results: {[chunk.text for chunk in ball_tree_results]}")
     
-    print("\nSearching with linear index...")
-    linear_results = index_builder.search_index(test_text, 1, "linear")  # Increased k to see more results
-    print(f"Linear results: {[chunk.text for chunk in linear_results]}")
+#     print("\nSearching with linear index...")
+#     linear_results = index_builder.search_index(test_text, 1, "linear")  # Increased k to see more results
+#     print(f"Linear results: {[chunk.text for chunk in linear_results]}")
     
-    # Try a different search query to see if it finds our text
-    different_query = "bad"
-    print(f"\nSearching with different query: {different_query}")
-    ball_tree_results = index_builder.search_index(different_query, 1, "ball_tree")
-    print(f"Ball tree results: {[chunk.text for chunk in ball_tree_results]}")
+#     # Try a different search query to see if it finds our text
+#     different_query = "bad"
+#     print(f"\nSearching with different query: {different_query}")
+#     ball_tree_results = index_builder.search_index(different_query, 1, "ball_tree")
+#     print(f"Ball tree results: {[chunk.text for chunk in ball_tree_results]}")
     
-    linear_results = index_builder.search_index(different_query, 1, "linear")
-    print(f"Linear results: {[chunk.text for chunk in linear_results]}")
+#     linear_results = index_builder.search_index(different_query, 1, "linear")
+#     print(f"Linear results: {[chunk.text for chunk in linear_results]}")
+
+    
