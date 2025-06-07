@@ -20,8 +20,8 @@ def get_env_var(key: str, default: Optional[str] = None) -> str:
 db_config = {
     "user": get_env_var("POSTGRES_USER", "charbel"),
     "password": get_env_var("POSTGRES_PASSWORD", "charbel"),
-    "host": get_env_var("POSTGRES_SERVER", "localhost"),
-    "port": get_env_var("POSTGRES_PORT", "5437"),
+    "host": get_env_var("POSTGRES_SERVER", "db"),
+    "port": get_env_var("POSTGRES_PORT", "5432"),
     "db": get_env_var("POSTGRES_DB", "stack_ai")
 }
     
