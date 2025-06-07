@@ -3,26 +3,26 @@ from fastapi import FastAPI
 from core.db import create_db_and_tables
 from api.routers import libraries_router, documents_router, chunks_router
 from scripts.populate_db import create_sample_data
-print("Starting app...")
+import logging
 
-# --- Correct Lifespan Definition ---
+# Set up logging
+logging.basicConfig(level=logging.INFO)
+logger = logging.getLogger(__name__)
+
+# Create tables before importing routers
+logger.info("Creating database tables...")
+create_db_and_tables(delete_tables=False)
+logger.info("Database tables created successfully")
+
+# Now import routers after tables are created
+from api.routers import libraries_router, documents_router, chunks_router
+
 @asynccontextmanager
 async def lifespan(app: FastAPI):
-    print("Application startup event triggered.")
-    # Run your database table creation logic here
-    # If create_db_and_tables was an async function, you'd await it.
-    # Since create_db_and_tables_sync is synchronous, just call it.
-    create_db_and_tables(delete_tables=False)
-    print("Database tables created.")
-    # create_sample_data(num_libraries=3, docs_per_library=4, chunks_per_doc=20)
-    yield # This yields control to the FastAPI application to start serving requests
-
-    print("Application shutdown event triggered.")
-    # Place cleanup code here if needed (e.g., closing connections, flushing logs)
-    # For a simple SQLModel setup, explicit engine closing is often not required
-    # as it's managed by the engine's lifecycle, but for more complex scenarios
-    # or connection pools, you might need to clean up here.
-
+    logger.info("Application startup event triggered.")
+    # Tables are already created, no need to create them here
+    yield
+    logger.info("Application shutdown event triggered.")
 
 app = FastAPI(
     title="VectorDB API",
@@ -30,8 +30,6 @@ app = FastAPI(
     version="0.1.0",
     lifespan=lifespan
 )
-
-
 
 # Include routers
 app.include_router(libraries_router)

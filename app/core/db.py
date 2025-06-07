@@ -3,9 +3,15 @@ from sqlalchemy import event
 from sqlalchemy.engine import Engine
 import os
 from typing import Optional
+import logging
+
+# Set up logging
+logging.basicConfig(level=logging.INFO)
+logger = logging.getLogger(__name__)
 
 def get_env_var(key: str, default: Optional[str] = None) -> str:
     value = os.getenv(key, default)
+    logger.info(f"Environment variable {key}: {value}")
     if value is None:
         raise ValueError(f"Required environment variable {key} is not set")
     return value
@@ -19,7 +25,10 @@ db_config = {
     "db": get_env_var("POSTGRES_DB", "stack_ai")
 }
 
+logger.info(f"Final database configuration: {db_config}")
+
 DATABASE_URL = f"postgresql://{db_config['user']}:{db_config['password']}@{db_config['host']}:{db_config['port']}/{db_config['db']}"
+logger.info(f"Database URL (with password masked): postgresql://{db_config['user']}:****@{db_config['host']}:{db_config['port']}/{db_config['db']}")
 
 # Create the engine without the 'foreign_keys' option
 engine = create_engine(

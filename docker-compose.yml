@@ -9,14 +9,15 @@ services:
     ports:
       - "8018:8018"
     environment:
-      - DATABASE_URL=postgresql://charbel:charbel@db:5432/stack_ai
-      - POSTGRES_HOST=db
-      - POSTGRES_PORT=5432
-      - POSTGRES_USER=charbel
-      - POSTGRES_PASSWORD=charbel
-      - POSTGRES_DB=stack_ai
+      POSTGRES_HOST: db
+      POSTGRES_PORT: 5432
+      POSTGRES_USER: charbel
+      POSTGRES_PASSWORD: charbel
+      POSTGRES_DB: stack_ai
+      DATABASE_URL: postgresql://charbel:charbel@db:5432/stack_ai
     depends_on:
-      - db
+      db:
+        condition: service_healthy
     networks:
       - app_network
 
@@ -34,6 +35,11 @@ services:
       - postgres_data:/var/lib/postgresql/data
     networks:
       - app_network
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U charbel -d stack_ai"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
 
   pgadmin:
     image: dpage/pgadmin4:latest
