@@ -19,6 +19,9 @@ COPY app/ .
 
 # Make port 8018 available to the world outside this container
 EXPOSE 8018
-RUN chmod +x app/entrypoint.sh
 
-ENTRYPOINT  ["app/entrypoint.sh"]
+# Make the entrypoint script executable
+RUN chmod +x /app/entrypoint.sh
+
+# Use the entrypoint script
+ENTRYPOINT ["/app/entrypoint.sh"]
