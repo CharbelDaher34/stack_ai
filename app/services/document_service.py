@@ -1,11 +1,11 @@
 import uuid
 from typing import List, Optional
-from datetime import datetime
+from datetime import datetime,timezone
 from sqlmodel import Session
 from infrastructure.repositories.document_repository import DocumentRepository
 from infrastructure.repositories.chunk_repository import ChunkRepository
 from core.models import Document, DocumentCreate, DocumentUpdate
-
+from fastapi import HTTPException
 
 class DocumentService:
     def __init__(self, session: Session):
@@ -20,7 +20,10 @@ class DocumentService:
 
     def get_document(self, document_id: uuid.UUID) -> Optional[Document]:
         """Get a document by its ID."""
-        return self.document_repository.get(document_id)
+        document=self.document_repository.get(document_id)
+        if not document:
+            raise HTTPException(status_code=404, detail="Document not found")
+        return document
 
     def get_documents_by_library(self, library_id: uuid.UUID, skip: int = 0, limit: int = 100) -> List[Document]:
         """Get all documents in a specific library."""
@@ -42,7 +45,7 @@ class DocumentService:
             setattr(db_document, key, value)
         
         # Update timestamp
-        db_document.updated_at = datetime.utcnow()
+        db_document.updated_at = datetime.now(timezone.utc)
         
         return self.document_repository.update(db_document)
 

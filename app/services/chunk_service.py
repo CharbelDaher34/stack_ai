@@ -1,7 +1,7 @@
 import uuid
 import math
 from typing import List, Optional, Tuple, Dict, Any, Union
-from datetime import datetime
+from datetime import datetime,timezone
 from sqlmodel import Session
 from infrastructure.repositories.chunk_repository import ChunkRepository
 from core.models.chunk_model import Chunk, ChunkCreate, ChunkUpdate, ChunkCreateRequest
@@ -9,7 +9,7 @@ from infrastructure.indexing.linear_index import LinearIndex
 from infrastructure.indexing.kd_tree import KDTreeIndex
 from sentence_transformers import SentenceTransformer
 from cohere import Client
-
+from fastapi import HTTPException
 class ChunkService:
     def __init__(self, session: Session):
         self.chunk_repository = ChunkRepository(session)
@@ -27,14 +27,19 @@ class ChunkService:
             document_id=self.chunk_repository.get_random_document_id()
             chunk_create=ChunkCreate(text=chunk_create.text,document_id=document_id,embedding=embedding.tolist())
         db_chunk = Chunk.model_validate(chunk_create)
+        
         return self.chunk_repository.create(db_chunk)
 
     def get_chunk(self, chunk_id: uuid.UUID) -> Optional[Chunk]:
         """Get a chunk by its ID."""
-        return self.chunk_repository.get(chunk_id)
+        chunk=self.chunk_repository.get(chunk_id)
+        if not chunk:
+            raise HTTPException(status_code=404, detail="Chunk not found")
+        return chunk
 
     def get_chunks_by_document(self, document_id: uuid.UUID, skip: int = 0, limit: int = 100, for_indexing: bool = False) -> List[Chunk]:
         """Get all chunks in a specific document."""
+        
         return self.chunk_repository.get_by_document_id(document_id, skip=skip, limit=limit, for_indexing=for_indexing)
 
     def get_all_chunks(self, skip: int = 0, limit: int = 100, for_indexing: bool = False) -> List[Chunk]:
@@ -45,7 +50,7 @@ class ChunkService:
         """Update a chunk with business logic."""
         db_chunk = self.chunk_repository.get(chunk_id)
         if not db_chunk:
-            return None
+            raise HTTPException(status_code=404, detail="Chunk not found, it canot be")
         
         # Update only provided fields
         update_data = chunk_update.model_dump(exclude_unset=True)
@@ -53,7 +58,7 @@ class ChunkService:
             setattr(db_chunk, key, value)
         
         # Update timestamp
-        db_chunk.updated_at = datetime.utcnow()
+        db_chunk.updated_at = datetime.now(timezone.utc)
         
         return self.chunk_repository.update(db_chunk)
 

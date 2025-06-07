@@ -13,8 +13,8 @@ import time
 def db_session():
     """Fixture to create a new database and tables for the test module."""
     print("🔧 Setting up database session fixture...")
-    # create_db_and_tables(delete_tables=True)
-    # create_sample_data(num_libraries=2, docs_per_library=2, chunks_per_doc=2)
+    create_db_and_tables(delete_tables=True)
+    create_sample_data(num_libraries=2, docs_per_library=2, chunks_per_doc=2)
     session = next(get_session())
     print("✅ Database session created successfully")
     yield session

@@ -2,15 +2,18 @@ from fastapi import FastAPI
 from core.db import create_db_and_tables
 from api.routers import libraries_router, documents_router, chunks_router
 print("Starting app...")
+lifespan = {
+    "startup": create_db_and_tables(delete_tables=False),
+    "shutdown": None
+}
 app = FastAPI(
     title="VectorDB API",
     description="API for indexing and querying documents in a Vector Database.",
-    version="0.1.0"
+    version="0.1.0",
+    lifespan=lifespan
 )
 
-@app.on_event("startup")
-def on_startup():
-    create_db_and_tables()
+
 
 # Include routers
 app.include_router(libraries_router)

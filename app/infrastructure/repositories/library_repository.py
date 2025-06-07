@@ -1,6 +1,6 @@
 from typing import List, Optional
 import uuid
-from datetime import datetime
+from datetime import datetime,timezone
 from sqlmodel import Session, select
 from core.models import Library, LibraryCreate, LibraryRead # Assuming LibraryUpdate will be similar to LibraryCreate for now
 from core.db import get_session # We'll need a way to get a DB session
@@ -24,7 +24,7 @@ class LibraryRepository:
         results = self.session.exec(statement)
         return results.all()
 
-    def update_library(self, library_id: uuid.UUID, library_update_data: LibraryCreate, indexed_at: Optional[datetime] = None) -> Optional[Library]:
+    def update_library(self, library_id: uuid.UUID, library_update_data: LibraryCreate) -> Optional[Library]:
         db_library = self.session.get(Library, library_id)
         if not db_library:
             return None
@@ -34,12 +34,9 @@ class LibraryRepository:
         for key, value in library_data.items():
             setattr(db_library, key, value)
         
-        # Update indexed_at if provided
-        if indexed_at is not None:
-            db_library.indexed_at = indexed_at
-        
+   
         # Update the updated_at timestamp
-        db_library.updated_at = datetime.utcnow()
+        db_library.updated_at = datetime.now(timezone.utc)
         
         self.session.add(db_library)
         self.session.commit()
@@ -57,7 +54,6 @@ class LibraryRepository:
             name=db_library.name,
             created_at=db_library.created_at,
             updated_at=db_library.updated_at,
-            indexed_at=db_library.indexed_at
         )
         
         self.session.delete(db_library)

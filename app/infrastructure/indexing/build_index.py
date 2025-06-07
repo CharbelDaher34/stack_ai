@@ -2,7 +2,7 @@ import sys
 import os
 
 sys.path.append(os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__)))))
-from core.models.chunk_model import ChunkCreateRequest
+from core.models import ChunkCreateRequest
 
 import uuid
 import logging

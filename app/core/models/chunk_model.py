@@ -10,7 +10,7 @@ from utils.pydantic_utils import make_optional_fields,make_optional
 class ChunkBase(TimeBase):
     text: str
     embedding: List[float] = Field(sa_column=Column(JSON))
-    document_id: uuid.UUID = Field(foreign_key="document.id")
+    document_id: uuid.UUID = Field(foreign_key="document.id",ondelete="CASCADE")
 
 class Chunk(ChunkBase, table=True):
     id: uuid.UUID = Field(default_factory=uuid.uuid4, primary_key=True)

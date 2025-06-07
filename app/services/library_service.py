@@ -58,22 +58,14 @@ class LibraryService:
         if not library:
             return False
         
-        # Update the indexed_at timestamp
         updated_library = self.repository.update_library(
             library_id, 
             LibraryCreate(name=library.name),
-            indexed_at=datetime.utcnow()
         )
         
         return updated_library is not None
 
-    def is_library_indexed(self, library_id: uuid.UUID) -> bool:
-        """Check if a library has been indexed."""
-        library = self.repository.get_library(library_id)
-        if not library:
-            return False
-        
-        return library.indexed_at is not None
+  
 
     def get_library_stats(self, library_id: uuid.UUID) -> Optional[dict]:
         """Get statistics about a library (document count, chunk count, etc.)."""

@@ -5,7 +5,7 @@ from fastapi import APIRouter, Depends, HTTPException, Query
 from sqlmodel import Session,Field
 from pydantic import BaseModel
 from core.db import get_session
-from core.models.chunk_model import Chunk, ChunkCreate, ChunkUpdate, ChunkRead, ChunkCreateRequest
+from core.models import Chunk, ChunkCreate, ChunkUpdate, ChunkRead, ChunkCreateRequest
 from services.chunk_service import ChunkService
 from infrastructure.indexing.build_index import IndexBuilder
 
