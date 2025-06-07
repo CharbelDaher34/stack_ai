@@ -14,7 +14,6 @@ class ChunkService:
     def __init__(self, session: Session):
         self.chunk_repository = ChunkRepository(session)
         self.model = SentenceTransformer("all-MiniLM-L6-v2")
-        # self.cohere_client = Client(api_key=os.getenv("COHERE_API_KEY"))
     def create_chunk(self, chunk_create: ChunkCreateRequest,random_chunk:bool=False) -> Chunk:
         """Create a new chunk with business logic validation."""
         # Business logic: validate that document exists could go here

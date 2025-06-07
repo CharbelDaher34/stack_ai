@@ -1,13 +1,26 @@
-
 from sqlmodel import SQLModel, create_engine, Session
 from sqlalchemy import event
 from sqlalchemy.engine import Engine
 import os
-import dotenv
+from typing import Optional
 
-dotenv.load_dotenv()
+def get_env_var(key: str, default: Optional[str] = None) -> str:
+    value = os.getenv(key, default)
+    if value is None:
+        raise ValueError(f"Required environment variable {key} is not set")
+    return value
 
-DATABASE_URL = f"postgresql://{os.getenv('POSTGRES_USER')}:{os.getenv('POSTGRES_PASSWORD')}@{os.getenv('POSTGRES_SERVER')}:{os.getenv('POSTGRES_PORT')}/{os.getenv('POSTGRES_DB')}"
+# Get database configuration from environment variables
+db_config = {
+    "user": get_env_var("POSTGRES_USER", "charbel"),
+    "password": get_env_var("POSTGRES_PASSWORD", "charbel"),
+    "host": get_env_var("POSTGRES_HOST", "db"),
+    "port": get_env_var("POSTGRES_PORT", "5432"),
+    "db": get_env_var("POSTGRES_DB", "stack_ai")
+}
+
+DATABASE_URL = f"postgresql://{db_config['user']}:{db_config['password']}@{db_config['host']}:{db_config['port']}/{db_config['db']}"
+
 # Create the engine without the 'foreign_keys' option
 engine = create_engine(
     DATABASE_URL,
