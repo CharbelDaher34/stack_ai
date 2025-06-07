@@ -10,11 +10,11 @@ services:
       - "8018:8018"
     environment:
       POSTGRES_HOST: db
-      POSTGRES_PORT: 5432
+      POSTGRES_PORT: 5437
       POSTGRES_USER: charbel
       POSTGRES_PASSWORD: charbel
       POSTGRES_DB: stack_ai
-      DATABASE_URL: postgresql://charbel:charbel@db:5432/stack_ai
+      DATABASE_URL: postgresql://charbel:charbel@db:5437/stack_ai
     
     depends_on:
       db:

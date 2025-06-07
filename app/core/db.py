@@ -4,7 +4,7 @@ from sqlalchemy.engine import Engine
 import os
 from typing import Optional
 import logging
-
+from dotenv import load_dotenv
 # Set up logging
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
@@ -20,11 +20,11 @@ def get_env_var(key: str, default: Optional[str] = None) -> str:
 db_config = {
     "user": get_env_var("POSTGRES_USER", "charbel"),
     "password": get_env_var("POSTGRES_PASSWORD", "charbel"),
-    "host": get_env_var("POSTGRES_HOST", "db"),
-    "port": get_env_var("POSTGRES_PORT", "5432"),
+    "host": get_env_var("POSTGRES_SERVER", "localhost"),
+    "port": get_env_var("POSTGRES_PORT", "5437"),
     "db": get_env_var("POSTGRES_DB", "stack_ai")
 }
-
+    
 logger.info(f"Final database configuration: {db_config}")
 
 DATABASE_URL = f"postgresql://{db_config['user']}:{db_config['password']}@{db_config['host']}:{db_config['port']}/{db_config['db']}"
